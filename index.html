@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeloClips - Ücretsiz Futbol Klipleri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen font-sans flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 bg-emerald-500 rounded-lg flex items-center justify-center font-bold text-xl text-black">⚡</div>
+                <h1 class="text-xl font-bold tracking-wide">Melo<span class="text-emerald-400">Clips</span></h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleAdminModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black transition text-sm font-semibold flex items-center gap-1.5">
+                    <i class="fas fa-plus"></i> Klip Ekle
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="max-w-6xl mx-auto px-4 py-8 text-center">
+        <span class="bg-emerald-500/10 text-emerald-400 text-xs px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest font-semibold">⚡ Her Gün Güncelleniyor</span>
+        <h2 class="text-3xl md:text-5xl font-extrabold mt-4 mb-3">Ücretsiz Futbol Klipleri</h2>
+        <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">
+            Editlemelerinde kullanabileceğin HD futbol klip galerisi.
+        </p>
+    </section>
+
+    <!-- Kategori Filtreleri -->
+    <div class="max-w-6xl mx-auto px-4 mb-8 overflow-x-auto">
+        <div class="flex gap-2 min-w-max pb-2">
+            <button onclick="filterClips('Tümü')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500 text-black">Tümü</button>
+            <button onclick="filterClips('Goller')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300">Goller</button>
+            <button onclick="filterClips('Çalımlar')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300">Çalımlar</button>
+            <button onclick="filterClips('Kurtarışlar')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300">Kurtarışlar</button>
+            <button onclick="filterClips('Viral')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300">Viral</button>
+        </div>
+    </div>
+
+    <!-- Klip Galerisi GRID -->
+    <main class="max-w-6xl mx-auto px-4 mb-16 flex-1">
+        <div id="clipGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Yüklenme Alanı -->
+            <p class="text-gray-500 col-span-full text-center py-10">Klipler yükleniyor...</p>
+        </div>
+    </main>
+
+    <!-- Yönetici Paneli Modalı (Klip + Kapak Fotoğrafı Yükleme) -->
+    <div id="adminModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md relative">
+            <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-plus-circle text-emerald-400"></i> Yeni Klip Ekle
+            </h3>
+            <form id="addClipForm" onsubmit="saveClip(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Klip Başlığı</label>
+                    <input type="text" id="clipTitle" required placeholder="Örn: Semih Kılıçsoy Çalım & Gol" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Kategori</label>
+                    <select id="clipCategory" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                        <option value="Goller">Goller</option>
+                        <option value="Çalımlar">Çalımlar</option>
+                        <option value="Kurtarışlar">Kurtarışlar</option>
+                        <option value="Viral">Viral</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Kapak Fotoğrafı URL (Thumbnail)</label>
+                    <input type="url" id="clipThumbnail" required placeholder="https://... (Resim Linki)" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Video Bağlantısı (Drive / MP4)</label>
+                    <input type="url" id="clipVideoUrl" required placeholder="https://... (Video Linki)" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <button type="submit" id="saveBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition mt-2">
+                    Klibi Kaydet ve Yayınla
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Kodları -->
+    <script>
+        const SUPABASE_URL = "https://ybhvvxbyxkheiibnatoz.supabase.co";
+        const SUPABASE_ANON_KEY = "Sb_publishable_0Kw9CSwqpvMyKzpZh1Z5mw_IUg-9Awl";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allClips = [];
+
+        async function fetchClips() {
+            const { data, error } = await supabaseClient
+                .from('clips')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                console.error("Hata:", error);
+                document.getElementById('clipGrid').innerHTML = '<p class="text-red-400 col-span-full text-center">Veriler yüklenirken hata oluştu!</p>';
+                return;
+            }
+
+            allClips = data || [];
+            renderClips(allClips);
+        }
+
+        function renderClips(clips) {
+            const grid = document.getElementById('clipGrid');
+            if (clips.length === 0) {
+                grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">Henüz klip eklenmemiş.</p>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            clips.forEach(clip => {
+                grid.innerHTML += `
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="relative aspect-video bg-gray-800">
+                                <img src="${clip.thumbnail}" alt="${clip.title}" class="w-full h-full object-cover">
+                                <span class="absolute top-2 left-2 bg-black/60 backdrop-blur text-emerald-400 text-xs px-2.5 py-1 rounded-lg border border-white/10 font-medium">
+                                    ${clip.category}
+                                </span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-base line-clamp-1 mb-1">${clip.title}</h3>
+                            </div>
+                        </div>
+                        <div class="p-4 pt-0 flex items-center justify-between border-t border-gray-800/50 mt-2">
+                            <button onclick="likeClip(${clip.id}, ${clip.likes})" class="text-xs text-gray-400 hover:text-pink-500 transition flex items-center gap-1.5">
+                                <i class="fas fa-heart text-pink-500"></i> <span>${clip.likes || 0}</span>
+                            </button>
+                            <a href="${clip.video_url}" target="_blank" class="bg-emerald-500/10 hover:bg-emerald-500 hover:text-black border border-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                                <i class="fas fa-download"></i> İndir
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterClips(category) {
+            if (category === 'Tümü') {
+                renderClips(allClips);
+            } else {
+                const filtered = allClips.filter(c => c.category === category);
+                renderClips(filtered);
+            }
+        }
+
+        function toggleAdminModal() {
+            document.getElementById('adminModal').classList.toggle('hidden');
+        }
+
+        async function saveClip(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "Kaydediliyor...";
+            btn.disabled = true;
+
+            const newClip = {
+                title: document.getElementById('clipTitle').value,
+                category: document.getElementById('clipCategory').value,
+                thumbnail: document.getElementById('clipThumbnail').value,
+                video_url: document.getElementById('clipVideoUrl').value,
+                likes: 0
+            };
+
+            const { error } = await supabaseClient.from('clips').insert([newClip]);
+
+            if (error) {
+                alert("Hata oluştu: " + error.message);
+            } else {
+                alert("Klip başarıyla kaydedildi!");
+                document.getElementById('addClipForm').reset();
+                toggleAdminModal();
+                fetchClips();
+            }
+
+            btn.innerText = "Klibi Kaydet ve Yayınla";
+            btn.disabled = false;
+        }
+
+        async function likeClip(id, currentLikes) {
+            const { error } = await supabaseClient
+                .from('clips')
+                .update({ likes: (currentLikes || 0) + 1 })
+                .eq('id', id);
+
+            if (!error) {
+                fetchClips();
+            }
+        }
+
+        // Sayfa açıldığında verileri çek
+        fetchClips();
+    </script>
+</body>
+</html>
